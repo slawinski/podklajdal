@@ -1,0 +1,41 @@
+name: Release smoke
+
+on:
+  workflow_dispatch:
+    inputs:
+      youtube_url:
+        description: Rights-cleared public YouTube video used for the end-to-end smoke test
+        required: true
+        type: string
+
+jobs:
+  smoke:
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          version: "0.10.0"
+          enable-cache: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install FFmpeg
+        run: brew install ffmpeg
+      - name: Install project
+        run: uv sync --group dev
+      - name: Verify CLI installation contract
+        run: |
+          uv run podklajdal --version
+          uv run podklajdal --doctor
+      - name: Real model integration
+        env:
+          PODKLAJDAL_RUN_MODEL_TEST: "1"
+        run: uv run pytest tests/integration/test_separator_model.py
+      - name: End-to-end YouTube smoke
+        env:
+          PODKLAJDAL_SMOKE_URL: ${{ inputs.youtube_url }}
+        run: |
+          uv run podklajdal "$PODKLAJDAL_SMOKE_URL" \
+            --output "$RUNNER_TEMP/podklajdal-smoke"
+          test "$(find "$RUNNER_TEMP/podklajdal-smoke" -name '*.mp3' | wc -l | tr -d ' ')" = "2"
