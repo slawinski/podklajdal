@@ -1,0 +1,45 @@
+[build-system]
+requires = ["hatchling>=1.27"]
+build-backend = "hatchling.build"
+
+[project]
+name = "podklajdal"
+version = "0.1.0"
+description = "Local CLI that turns a YouTube video into vocals and instrumental tracks."
+readme = "README.md"
+requires-python = ">=3.12,<3.14"
+dependencies = [
+  "audio-separator[cpu]==0.47.0",
+  "rich>=14,<15",
+  "typer>=0.19,<1",
+  "yt-dlp>=2026.8.19,<2027",
+]
+
+[project.scripts]
+podklajdal = "podklajdal.cli:main"
+
+[dependency-groups]
+dev = [
+  "pytest>=8.4,<10",
+  "pytest-cov>=6.2,<8",
+  "ruff>=0.13,<1",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/podklajdal"]
+
+[tool.pytest.ini_options]
+addopts = "-q"
+pythonpath = ["src"]
+testpaths = ["tests"]
+markers = [
+  "integration: tests requiring local system dependencies",
+  "integration_model: tests requiring the separation model",
+]
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM"]
