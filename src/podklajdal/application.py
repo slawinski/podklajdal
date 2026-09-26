@@ -13,7 +13,7 @@ from podklajdal.config import (
     Settings,
 )
 from podklajdal.domain.errors import DurationLimitError, LocalEnvironmentError, PodklajdalError
-from podklajdal.domain.job import AudioInfo, JobRequest, JobResult, JobState
+from podklajdal.domain.job import JobRequest, JobResult, JobState
 from podklajdal.domain.metadata import VideoMetadata
 from podklajdal.infrastructure.ffmpeg import require_ffmpeg, require_ffprobe
 from podklajdal.infrastructure.filesystem import (

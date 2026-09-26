@@ -1,7 +1,7 @@
 from __future__ import annotations
 
+from collections.abc import Callable
 from pathlib import Path
-from typing import Callable
 from urllib.parse import parse_qs, urlparse
 
 from podklajdal.domain.errors import (

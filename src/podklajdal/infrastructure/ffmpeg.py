@@ -3,8 +3,8 @@ from __future__ import annotations
 import json
 import shutil
 import subprocess
+from collections.abc import Sequence
 from pathlib import Path
-from typing import Sequence
 
 from podklajdal.domain.errors import FFmpegMissingError, FFprobeMissingError
 
