@@ -17,8 +17,8 @@ def require_ffmpeg() -> str:
     path = executable_path("ffmpeg")
     if not path:
         raise FFmpegMissingError(
-            "FFmpeg is required but was not found in PATH.",
-            "macOS with Homebrew: brew install ffmpeg\nThen run: podklajdal --doctor",
+            "FFmpeg jest wymagany, ale nie znaleziono go w PATH.",
+            "macOS z Homebrew: brew install ffmpeg\nNastępnie uruchom: podklajdal --doctor",
         )
     return path
 
@@ -27,8 +27,8 @@ def require_ffprobe() -> str:
     path = executable_path("ffprobe")
     if not path:
         raise FFprobeMissingError(
-            "ffprobe is required but was not found in PATH.",
-            "Install FFmpeg, then run: podklajdal --doctor",
+            "ffprobe jest wymagany, ale nie znaleziono go w PATH.",
+            "Zainstaluj FFmpeg, a następnie uruchom: podklajdal --doctor",
         )
     return path
 
@@ -89,4 +89,4 @@ def version_line(name: str) -> str | None:
         return None
     completed = run_process([path, "-version"], check=False)
     first = completed.stdout.splitlines()[:1]
-    return first[0] if first else "installed"
+    return first[0] if first else "zainstalowany"
