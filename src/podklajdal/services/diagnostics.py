@@ -35,10 +35,10 @@ def _directory_writable(path: Path) -> bool:
 class DiagnosticsService:
     def run(self, model_cache: Path, output_root: Path) -> DiagnosticReport:
         items: list[DiagnosticItem] = [
-            DiagnosticItem("version", "PASS", VERSION),
+            DiagnosticItem("wersja", "PASS", VERSION),
             DiagnosticItem("Python", "PASS", platform.python_version()),
-            DiagnosticItem("OS", "PASS", f"{platform.system()} {platform.release()}"),
-            DiagnosticItem("architecture", "PASS", platform.machine()),
+            DiagnosticItem("system", "PASS", f"{platform.system()} {platform.release()}"),
+            DiagnosticItem("architektura", "PASS", platform.machine()),
         ]
         ready = True
 
@@ -47,7 +47,7 @@ class DiagnosticsService:
             if version:
                 items.append(DiagnosticItem(executable, "PASS", version))
             else:
-                items.append(DiagnosticItem(executable, "FAIL", "not found in PATH"))
+                items.append(DiagnosticItem(executable, "FAIL", "nie znaleziono w PATH"))
                 ready = False
 
         for module, label in (("yt_dlp", "yt-dlp"), ("audio_separator", "separator")):
@@ -56,7 +56,7 @@ class DiagnosticsService:
                 DiagnosticItem(
                     label,
                     "PASS" if present else "FAIL",
-                    "installed" if present else "missing",
+                    "zainstalowany" if present else "brak",
                 )
             )
             ready = ready and present
@@ -72,7 +72,7 @@ class DiagnosticsService:
             DiagnosticItem(
                 "PyTorch MPS",
                 "PASS" if mps_available else "WARN",
-                "available" if mps_available else "unavailable",
+                "dostępny" if mps_available else "niedostępny",
             )
         )
 
@@ -87,7 +87,7 @@ class DiagnosticsService:
             DiagnosticItem(
                 "CoreML EP",
                 "PASS" if coreml_available else "WARN",
-                "available" if coreml_available else "unavailable",
+                "dostępny" if coreml_available else "niedostępny",
             )
         )
         if mps_available and coreml_available:
@@ -97,10 +97,10 @@ class DiagnosticsService:
         elif coreml_available:
             selected = "CoreML"
         else:
-            selected = "CPU fallback"
-        items.append(DiagnosticItem("selected", "PASS" if ready else "WARN", selected))
+            selected = "CPU"
+        items.append(DiagnosticItem("wybrane", "PASS" if ready else "WARN", selected))
 
-        for path, label in ((model_cache, "model cache"), (output_root, "output root")):
+        for path, label in ((model_cache, "pamięć modeli"), (output_root, "katalog wynikowy")):
             writable = _directory_writable(path)
             items.append(
                 DiagnosticItem(
