@@ -14,22 +14,22 @@ class AudioService:
         try:
             payload = probe_json(path)
         except Exception as exc:
-            raise ProbeError(f"could not decode audio file: {path}") from exc
+            raise ProbeError(f"nie udało się odczytać pliku audio: {path}") from exc
 
         streams = [s for s in payload.get("streams", []) if s.get("codec_type") == "audio"]
         if not streams:
-            raise ProbeError(f"audio file contains no audio stream: {path}")
+            raise ProbeError(f"plik nie zawiera ścieżki audio: {path}")
         stream = streams[0]
         raw_duration = stream.get("duration") or payload.get("format", {}).get("duration")
         try:
             duration = float(raw_duration)
         except (TypeError, ValueError) as exc:
-            raise ProbeError(f"audio duration is invalid: {path}") from exc
+            raise ProbeError(f"nieprawidłowa długość pliku audio: {path}") from exc
         if duration <= 0:
-            raise ProbeError(f"audio duration is invalid: {path}")
+            raise ProbeError(f"nieprawidłowa długość pliku audio: {path}")
         sample_rate = stream.get("sample_rate")
         return AudioInfo(
-            codec_name=str(stream.get("codec_name") or "unknown"),
+            codec_name=str(stream.get("codec_name") or "nieznany"),
             duration_seconds=duration,
             sample_rate=int(sample_rate) if sample_rate else None,
             channels=int(stream["channels"]) if stream.get("channels") else None,
@@ -72,11 +72,13 @@ class AudioService:
             )
         except subprocess.CalledProcessError as exc:
             hint = (
-                "Free disk space and try again."
+                "Zwolnij miejsce na dysku i spróbuj ponownie."
                 if "No space left" in (exc.stderr or "")
                 else None
             )
-            raise PreparationError("failed to prepare canonical WAV audio.", hint) from exc
+            raise PreparationError(
+                "nie udało się przygotować źródłowego pliku WAV.", hint
+            ) from exc
         self.probe(destination)
         return destination
 
@@ -119,30 +121,30 @@ class AudioService:
             run_process(args)
         except subprocess.CalledProcessError as exc:
             hint = (
-                "Free disk space and try again."
+                "Zwolnij miejsce na dysku i spróbuj ponownie."
                 if "No space left" in (exc.stderr or "")
                 else None
             )
-            raise EncodeError(f"failed to encode MP3: {destination.name}", hint) from exc
+            raise EncodeError(f"nie udało się zakodować pliku MP3: {destination.name}", hint) from exc
         return destination
 
     def validate_duration(self, path: Path, expected_seconds: float, tolerance: float) -> AudioInfo:
         info = self.probe(path)
         if abs(info.duration_seconds - expected_seconds) > tolerance:
             raise ProbeError(
-                f"audio duration mismatch for {path.name}: "
-                f"expected about {expected_seconds:.1f}s, got {info.duration_seconds:.1f}s"
+                f"niezgodna długość pliku {path.name}: "
+                f"oczekiwano około {expected_seconds:.1f} s, otrzymano {info.duration_seconds:.1f} s"
             )
         return info
 
     def validate_final_mp3(self, path: Path, expected_seconds: float) -> AudioInfo:
         if not path.exists() or path.stat().st_size <= 0:
-            raise EncodeError(f"encoded output is empty: {path}")
+            raise EncodeError(f"plik wynikowy jest pusty: {path}")
         info = self.validate_duration(path, expected_seconds, tolerance=1.0)
         if info.codec_name != "mp3":
-            raise EncodeError(f"encoded output is not MP3: {path}")
+            raise EncodeError(f"plik wynikowy nie jest plikiem MP3: {path}")
         if info.sample_rate != 44100:
-            raise EncodeError(f"encoded output is not 44.1 kHz: {path}")
+            raise EncodeError(f"plik wynikowy nie ma częstotliwości 44,1 kHz: {path}")
         if info.channels != 2:
-            raise EncodeError(f"encoded output is not stereo: {path}")
+            raise EncodeError(f"plik wynikowy nie jest stereofoniczny: {path}")
         return info
