@@ -1,7 +1,7 @@
 from typer.testing import CliRunner
 
 from podklajdal import __version__
-from podklajdal.cli import STARTUP_LOGO, _progress_bar, app
+from podklajdal.cli import STARTUP_LOGO, _progress_bar, _startup_logo, app
 
 runner = CliRunner()
 
@@ -29,3 +29,10 @@ def test_progress_bar_contains_only_hashes_and_spaces() -> None:
     bar = _progress_bar(42, 10)
     assert bar == "####      "
     assert len(bar) == 10
+
+
+def test_startup_logo_preserves_ascii_art_and_uses_gradient() -> None:
+    logo = _startup_logo()
+    assert logo.plain == STARTUP_LOGO
+    assert len(logo.spans) > 1
+    assert logo.spans[0].style != logo.spans[-1].style
