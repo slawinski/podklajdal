@@ -51,7 +51,11 @@ class FakeSeparator:
     def ensure_model(self, output_dir: Path) -> None:
         output_dir.mkdir(parents=True, exist_ok=True)
 
-    def separate(self, source: Path, destination_dir: Path) -> SeparatedStems:
+    def separate(self, source: Path, destination_dir: Path, on_progress=None) -> SeparatedStems:
+        if on_progress:
+            on_progress(0)
+            on_progress(50)
+            on_progress(100)
         vocals = destination_dir / "vocals.wav"
         instrumental = destination_dir / "instrumental.wav"
         vocals.write_bytes(b"vocals")
@@ -74,15 +78,18 @@ def test_happy_path_and_states(tmp_path: Path, monkeypatch) -> None:
         separator=FakeSeparator(),
     )
     states: list[JobState] = []
+    separation_progress: list[int] = []
     result = app.process_youtube_video(
         JobRequest("https://youtu.be/abc123", settings.output_root),
         on_stage=lambda state, detail: (
             states.append(state) if not states or states[-1] != state else None
         ),
+        on_separation_progress=separation_progress.append,
     )
 
     assert result.vocals_path.read_bytes() == b"mp3"
     assert result.instrumental_path.read_bytes() == b"mp3"
+    assert separation_progress == [0, 50, 100]
     assert states == [
         JobState.INSPECTING,
         JobState.DOWNLOADING,
