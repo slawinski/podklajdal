@@ -24,6 +24,14 @@ app = typer.Typer(
     help=f"{PRODUCT_NAME}: turn one YouTube video into vocals and instrumental MP3 files.",
 )
 
+STARTUP_LOGO = """\
+██████╗  ██████╗ ██████╗ ██╗  ██╗██╗      █████╗      ██╗██████╗  █████╗ ██╗
+██╔══██╗██╔═══██╗██╔══██╗██║ ██╔╝██║     ██╔══██╗     ██║██╔══██╗██╔══██╗██║
+██████╔╝██║   ██║██║  ██║█████╔╝ ██║     ███████║     ██║██║  ██║███████║██║
+██╔═══╝ ██║   ██║██║  ██║██╔═██╗ ██║     ██╔══██║██   ██║██║  ██║██╔══██║██║
+██║     ╚██████╔╝██████╔╝██║  ██╗███████╗██║  ██║╚█████╔╝██████╔╝██║  ██║███████╗
+╚═╝      ╚═════╝ ╚═════╝ ╚═╝  ╚═╝╚══════╝╚═╝  ╚═╝ ╚════╝ ╚═════╝ ╚═╝  ╚═╝╚══════╝"""
+
 _STAGE_LABELS = {
     JobState.INSPECTING: "Inspecting URL",
     JobState.DOWNLOADING: "Downloading audio",
@@ -198,7 +206,8 @@ def run(
         err_console.print("Run 'podklajdal --help' for usage.")
         raise typer.Exit(2)
 
-    console.print(f"[bold]{PRODUCT_NAME}[/bold]\n")
+    console.print(STARTUP_LOGO, style="bold cyan", highlight=False, soft_wrap=True)
+    console.print()
     reporter = StageReporter(console)
     app_service = PodklajdalApplication()
 
