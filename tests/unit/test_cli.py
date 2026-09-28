@@ -25,6 +25,19 @@ def test_non_youtube_url_is_input_error() -> None:
     assert STARTUP_LOGO.splitlines()[0] in result.output
 
 
+def test_startup_logo_uses_stroked_l_variant() -> None:
+    lines = STARTUP_LOGO.splitlines()
+    glyph = tuple(line[33:42].rstrip() for line in lines)
+    assert glyph == (
+        "██╗",
+        "██║  ██╗",
+        "██║ ██╔╝",
+        "███╔╝",
+        "███████╗",
+        "╚══════╝",
+    )
+
+
 def test_progress_bar_contains_only_hashes_and_spaces() -> None:
     bar = _progress_bar(42, 10)
     assert bar == "####      "
