@@ -30,29 +30,33 @@ def validate_youtube_url(url: str) -> None:
     try:
         parsed = urlparse(url)
     except ValueError as exc:
-        raise InvalidUrlError("expected a single YouTube video URL.") from exc
+        raise InvalidUrlError("podaj adres URL jednego filmu z YouTube.") from exc
     if parsed.scheme not in {"http", "https"} or not parsed.netloc:
-        raise InvalidUrlError("expected a single YouTube video URL.", f"Received: {url}")
+        raise InvalidUrlError("podaj adres URL jednego filmu z YouTube.", f"Otrzymano: {url}")
     host = parsed.hostname.lower() if parsed.hostname else ""
     if host not in _SUPPORTED_HOSTS:
-        raise UnsupportedUrlError("expected a single YouTube video URL.", f"Received: {url}")
+        raise UnsupportedUrlError("podaj adres URL jednego filmu z YouTube.", f"Otrzymano: {url}")
 
     if host == "youtu.be":
         if not parsed.path.strip("/"):
-            raise InvalidUrlError("expected a single YouTube video URL.", f"Received: {url}")
+            raise InvalidUrlError("podaj adres URL jednego filmu z YouTube.", f"Otrzymano: {url}")
         return
 
     path = parsed.path.rstrip("/") or "/"
     query = parse_qs(parsed.query)
     if path == "/playlist":
-        raise PlaylistNotSupportedError("playlist-only URLs are not supported in the MVP.")
+        raise PlaylistNotSupportedError(
+            "adresy URL prowadzące wyłącznie do playlist nie są obsługiwane w MVP."
+        )
     if path == "/watch":
         if not query.get("v"):
-            raise InvalidUrlError("expected a single YouTube video URL.", f"Received: {url}")
+            raise InvalidUrlError(
+                "podaj adres URL jednego filmu z YouTube.", f"Otrzymano: {url}"
+            )
         return
     if path.startswith("/shorts/") and len(path.split("/")) >= 3:
         return
-    raise UnsupportedUrlError("expected a single YouTube video URL.", f"Received: {url}")
+    raise UnsupportedUrlError("podaj adres URL jednego filmu z YouTube.", f"Otrzymano: {url}")
 
 
 def _translate_download_error(exc: Exception) -> Exception:
@@ -60,12 +64,12 @@ def _translate_download_error(exc: Exception) -> Exception:
     lower = message.lower()
     if any(token in lower for token in ("sign in", "private video", "login", "cookies")):
         return AuthenticationRequiredError(
-            "this video cannot be downloaded without authentication.",
-            "podkłajdal MVP supports public videos that do not require cookies or login.",
+            "tego filmu nie można pobrać bez uwierzytelnienia.",
+            "podkłajdal MVP obsługuje publiczne filmy, które nie wymagają plików cookie ani logowania.",
         )
     if any(token in lower for token in ("video unavailable", "removed", "not available")):
-        return VideoUnavailableError("the YouTube video is unavailable.")
-    return MediaDownloadError("failed to retrieve media from YouTube.", message)
+        return VideoUnavailableError("film YouTube jest niedostępny.")
+    return MediaDownloadError("nie udało się pobrać materiału z YouTube.", message)
 
 
 def _release_year(info: dict) -> int | None:
@@ -85,7 +89,7 @@ class YouTubeService:
             from yt_dlp import YoutubeDL
             from yt_dlp.utils import DownloadError as YtDlpDownloadError
         except ImportError as exc:
-            raise MediaDownloadError("yt-dlp is not installed correctly.") from exc
+            raise MediaDownloadError("nie można poprawnie zaimportować yt-dlp.") from exc
 
         options = {
             "quiet": True,
@@ -100,18 +104,18 @@ class YouTubeService:
             raise _translate_download_error(exc) from exc
 
         if not isinstance(info, dict) or info.get("_type") == "playlist":
-            raise PlaylistNotSupportedError("expected one YouTube video, not a playlist.")
+            raise PlaylistNotSupportedError("oczekiwano jednego filmu YouTube, nie playlisty.")
         is_live = bool(info.get("is_live")) or info.get("live_status") == "is_live"
         if is_live:
             raise LiveStreamNotSupportedError(
-                "live streams currently in progress are not supported."
+                "trwające transmisje na żywo nie są obsługiwane."
             )
         duration = info.get("duration")
         if not duration or float(duration) <= 0:
-            raise VideoUnavailableError("video duration could not be determined.")
+            raise VideoUnavailableError("nie udało się ustalić długości filmu.")
         return VideoMetadata(
             id=str(info.get("id") or ""),
-            title=str(info.get("title") or "untitled"),
+            title=str(info.get("title") or "bez tytułu"),
             webpage_url=str(info.get("webpage_url") or url),
             duration_seconds=int(float(duration)),
             uploader=info.get("uploader") or info.get("channel"),
@@ -132,7 +136,7 @@ class YouTubeService:
             from yt_dlp import YoutubeDL
             from yt_dlp.utils import DownloadError as YtDlpDownloadError
         except ImportError as exc:
-            raise MediaDownloadError("yt-dlp is not installed correctly.") from exc
+            raise MediaDownloadError("nie można poprawnie zaimportować yt-dlp.") from exc
 
         hooks = [on_progress] if on_progress else []
         options = {
@@ -165,5 +169,5 @@ class YouTubeService:
         if len(candidates) == 1:
             return candidates[0]
         raise MediaDownloadError(
-            "yt-dlp finished but the downloaded audio file could not be located."
+            "yt-dlp zakończył pracę, ale nie udało się odnaleźć pobranego pliku audio."
         )
