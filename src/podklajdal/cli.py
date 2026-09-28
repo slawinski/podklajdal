@@ -37,6 +37,14 @@ _STAGE_LABELS = {
 }
 
 
+def _progress_bar(percent: int, width: int) -> str:
+    percent = max(0, min(100, percent))
+    filled = int(width * percent / 100)
+    if percent > 0 and filled == 0:
+        filled = 1
+    return "#" * filled + " " * (width - filled)
+
+
 class StageReporter:
     def __init__(self, console: Console) -> None:
         self.console = console
@@ -72,13 +80,22 @@ class StageReporter:
                 f"{_human_bytes(downloaded)} / {_human_bytes(total)}"
             )
 
+    def separation(self, percent: int) -> None:
+        if self.current_state != JobState.SEPARATING or not self.status:
+            return
+        label = _STAGE_LABELS[JobState.SEPARATING]
+        width = max(12, min(60, self.console.width - len(label) - 12))
+        bar = _progress_bar(percent, width)
+        self.status.update(f"{label}  |{bar}|  {percent:3d}%")
+
     def finish_current(self) -> None:
         if not self.current_state:
             return
         if self.status:
             self.status.stop()
         label = _STAGE_LABELS.get(self.current_state, self.current_state.value)
-        suffix = f"\n  {self.current_detail}" if self.current_detail else ""
+        show_detail = self.current_detail and self.current_detail != label
+        suffix = f"\n  {self.current_detail}" if show_detail else ""
         self.console.print(f"[green]✓[/green] {label}{suffix}")
         self.status = None
         self.current_state = None
@@ -207,6 +224,7 @@ def run(
             on_notice=lambda message: console.print(f"[yellow]![/yellow] {message}"),
             on_debug=debug,
             on_download=reporter.download,
+            on_separation_progress=reporter.separation,
         )
         reporter.finish_current()
         console.print("\n[bold green]Done[/bold green]")
