@@ -10,6 +10,7 @@ readme = "README.md"
 requires-python = ">=3.12,<3.14"
 dependencies = [
   "audio-separator[cpu]==0.47.0",
+  "audioread>=3,<4",
   "rich>=14,<15",
   "typer>=0.19,<1",
   "yt-dlp>=2026.8.19,<2027",
