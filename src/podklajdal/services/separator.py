@@ -1,11 +1,48 @@
 from __future__ import annotations
 
+import io
 import logging
+import re
+import sys
+from collections.abc import Callable
+from contextlib import redirect_stderr
 from pathlib import Path
 
 from podklajdal.config import DEFAULT_MODEL
 from podklajdal.domain.errors import InferenceError, ModelDownloadError, ModelLoadError
 from podklajdal.domain.job import SeparatedStems
+
+ProgressCallback = Callable[[int], None]
+_TQDM_PERCENT_RE = re.compile(r"(?<!\d)(\d{1,3})%\|")
+
+
+class _TqdmProgressStream(io.TextIOBase):
+    """Capture tqdm refreshes while preserving unrelated stderr output."""
+
+    def __init__(self, on_progress: ProgressCallback, fallback) -> None:
+        self.on_progress = on_progress
+        self.fallback = fallback
+        self.last_percent: int | None = None
+
+    def write(self, text: str) -> int:
+        if not text:
+            return 0
+        matches = list(_TQDM_PERCENT_RE.finditer(text))
+        if matches:
+            percent = max(0, min(100, int(matches[-1].group(1))))
+            if percent != self.last_percent:
+                self.last_percent = percent
+                self.on_progress(percent)
+            return len(text)
+        if not text.strip("\r\n "):
+            return len(text)
+        return self.fallback.write(text)
+
+    def flush(self) -> None:
+        self.fallback.flush()
+
+    def isatty(self) -> bool:
+        return bool(getattr(self.fallback, "isatty", lambda: False)())
 
 
 class SeparationService:
@@ -50,11 +87,23 @@ class SeparationService:
         self._separator = separator
         self._output_dir = output_dir
 
-    def separate(self, source: Path, destination_dir: Path) -> SeparatedStems:
+    def separate(
+        self,
+        source: Path,
+        destination_dir: Path,
+        on_progress: ProgressCallback | None = None,
+    ) -> SeparatedStems:
         if self._separator is None or self._output_dir != destination_dir:
             self.ensure_model(destination_dir)
         try:
-            output_files = self._separator.separate(str(source))
+            if on_progress:
+                on_progress(0)
+                progress_stream = _TqdmProgressStream(on_progress, sys.stderr)
+                with redirect_stderr(progress_stream):
+                    output_files = self._separator.separate(str(source))
+                on_progress(100)
+            else:
+                output_files = self._separator.separate(str(source))
         except Exception as exc:
             raise InferenceError("vocal/instrumental separation failed.", str(exc)) from exc
 
