@@ -9,6 +9,7 @@ from typing import Annotated
 import typer
 from rich.console import Console
 from rich.status import Status
+from rich.text import Text
 
 from podklajdal import __version__
 from podklajdal.application import PodklajdalApplication
@@ -31,6 +32,39 @@ STARTUP_LOGO = """\
 ██╔═══╝ ██║   ██║██║  ██║██╔═██╗ ███╔╝   ██╔══██║██   ██║██║  ██║██╔══██║██║
 ██║     ╚██████╔╝██████╔╝██║  ██╗███████╗██║  ██║╚█████╔╝██████╔╝██║  ██║███████╗
 ╚═╝      ╚═════╝ ╚═════╝ ╚═╝  ╚═╝╚══════╝╚═╝  ╚═╝ ╚════╝ ╚═════╝ ╚═╝  ╚═╝╚══════╝"""
+
+_TURBO_GRADIENT = (
+    (88, 101, 242),   # blue-violet
+    (124, 58, 237),   # violet
+    (219, 39, 119),   # magenta
+    (244, 63, 94),    # red-pink
+)
+
+
+def _startup_logo() -> Text:
+    """Render the startup logo with a horizontal FULL TURBO-inspired gradient."""
+    lines = STARTUP_LOGO.splitlines()
+    width = max(len(line) for line in lines)
+    logo = Text()
+
+    for line_index, line in enumerate(lines):
+        for column, character in enumerate(line):
+            position = column / max(1, width - 1)
+            scaled = position * (len(_TURBO_GRADIENT) - 1)
+            stop = min(int(scaled), len(_TURBO_GRADIENT) - 2)
+            mix = scaled - stop
+            start = _TURBO_GRADIENT[stop]
+            end = _TURBO_GRADIENT[stop + 1]
+            red, green, blue = (
+                round(start[channel] + (end[channel] - start[channel]) * mix)
+                for channel in range(3)
+            )
+            logo.append(character, style=f"bold rgb({red},{green},{blue})")
+        if line_index < len(lines) - 1:
+            logo.append("\n")
+
+    return logo
+
 
 _STAGE_LABELS = {
     JobState.INSPECTING: "Inspecting URL",
@@ -206,7 +240,7 @@ def run(
         err_console.print("Run 'podklajdal --help' for usage.")
         raise typer.Exit(2)
 
-    console.print(STARTUP_LOGO, style="bold cyan", highlight=False, soft_wrap=True)
+    console.print(_startup_logo(), highlight=False, soft_wrap=True)
     console.print()
     reporter = StageReporter(console)
     app_service = PodklajdalApplication()
