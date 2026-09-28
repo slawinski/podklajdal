@@ -25,7 +25,10 @@ class SeparationService:
         try:
             from audio_separator.separator import Separator
         except ImportError as exc:
-            raise ModelLoadError("audio-separator is not installed correctly.") from exc
+            raise ModelLoadError(
+                "audio-separator could not be imported.",
+                f"{type(exc).__name__}: {exc}",
+            ) from exc
 
         was_cached = self.model_is_cached
         try:
