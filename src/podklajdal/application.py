@@ -46,8 +46,8 @@ def validate_duration_policy(duration_seconds: int, allow_long: bool) -> bool:
         minutes, seconds = divmod(remainder, 60)
         rendered = f"{hours:02d}:{minutes:02d}:{seconds:02d}"
         raise DurationLimitError(
-            f"video duration is {rendered}. Tracks longer than 60 minutes are blocked by default.",
-            "Re-run with --allow-long if this is intentional.",
+            f"film ma długość {rendered}. Filmy dłuższe niż 60 minut są domyślnie blokowane.",
+            "Jeśli to zamierzone, uruchom ponownie z --allow-long.",
         )
     return duration_seconds > MAX_NORMAL_DURATION_SECONDS
 
@@ -104,12 +104,13 @@ class PodklajdalApplication:
             is_long = validate_duration_policy(metadata.duration_seconds, request.allow_long)
             if is_long and on_notice:
                 on_notice(
-                    f"This video is {self._format_duration(metadata.duration_seconds)}. "
-                    "Long tracks use more memory and take longer to separate. Continuing…"
+                    f"Ten film ma długość {self._format_duration(metadata.duration_seconds)}. "
+                    "Długie nagrania zużywają więcej pamięci i wymagają więcej czasu "
+                    "na separację. Kontynuuję…"
                 )
 
             paths = create_job_paths(metadata, request.output_root, self.settings.jobs_root)
-            debug(f"workspace: {paths.workspace}")
+            debug(f"katalog roboczy: {paths.workspace}")
             debug(f"model: {self.settings.model_filename}")
             paths = self._resolve_output_collision(paths, metadata, request)
             check_output_conflicts(paths, request.overwrite)
@@ -122,13 +123,13 @@ class PodklajdalApplication:
             source = self.youtube.download_audio(metadata, paths.source_template, on_download)
             source_info = self.audio.probe(source)
             debug(
-                f"source: {source.name}; codec={source_info.codec_name}; "
-                f"duration={source_info.duration_seconds:.2f}s"
+                f"źródło: {source.name}; kodek={source_info.codec_name}; "
+                f"długość={source_info.duration_seconds:.2f}s"
             )
             if abs(source_info.duration_seconds - metadata.duration_seconds) > 5:
                 debug(
-                    "source duration differs from YouTube metadata by more than 5 seconds; "
-                    "using probed duration for media validation"
+                    "długość pliku źródłowego różni się od metadanych YouTube o ponad "
+                    "5 sekund; do sprawdzania plików używam długości odczytanej z audio"
                 )
 
             stage(JobState.PREPARING)
@@ -205,14 +206,14 @@ class PodklajdalApplication:
         require_ffprobe()
         if isinstance(self.youtube, YouTubeService) and importlib.util.find_spec("yt_dlp") is None:
             raise LocalEnvironmentError(
-                "yt-dlp is required but the Python package is not installed."
+                "Pakiet Python yt-dlp jest wymagany, ale nie jest zainstalowany."
             )
         if (
             isinstance(self.separator, SeparationService)
             and importlib.util.find_spec("audio_separator") is None
         ):
             raise LocalEnvironmentError(
-                "audio-separator is required but the Python package is not installed."
+                "Pakiet Python audio-separator jest wymagany, ale nie jest zainstalowany."
             )
         ensure_writable_directory(output_root)
         for path in (self.settings.jobs_root, self.settings.model_cache):
@@ -220,7 +221,7 @@ class PodklajdalApplication:
                 path.mkdir(parents=True, exist_ok=True)
             except OSError as exc:
                 raise LocalEnvironmentError(
-                    f"cannot create application cache directory: {path}"
+                    f"nie można utworzyć katalogu pamięci podręcznej aplikacji: {path}"
                 ) from exc
 
     @staticmethod
