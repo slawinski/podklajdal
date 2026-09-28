@@ -236,9 +236,8 @@ def run(
             on_separation_progress=reporter.separation,
         )
         reporter.finish_current()
-        console.print("\n[bold green]Done[/bold green]")
-        console.print(f"  Vocals:       {result.vocals_path}")
-        console.print(f"  Instrumental: {result.instrumental_path}")
+        console.print("\n[bold green]Done (Vocals + Instrumental)[/bold green]")
+        console.print(f"  {result.vocals_path.parent}{os.sep}")
     except KeyboardInterrupt:
         reporter.cancel()
         err_console.print("\nCancelled. Cleaning temporary files…")
