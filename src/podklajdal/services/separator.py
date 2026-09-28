@@ -63,7 +63,7 @@ class SeparationService:
             from audio_separator.separator import Separator
         except ImportError as exc:
             raise ModelLoadError(
-                "audio-separator could not be imported.",
+                "nie można zaimportować audio-separator.",
                 f"{type(exc).__name__}: {exc}",
             ) from exc
 
@@ -80,9 +80,9 @@ class SeparationService:
         except Exception as exc:
             if not was_cached:
                 raise ModelDownloadError(
-                    "failed to download or prepare the separation model.", str(exc)
+                    "nie udało się pobrać lub przygotować modelu separacji.", str(exc)
                 ) from exc
-            raise ModelLoadError("failed to load the separation model.", str(exc)) from exc
+            raise ModelLoadError("nie udało się wczytać modelu separacji.", str(exc)) from exc
 
         self._separator = separator
         self._output_dir = output_dir
@@ -105,7 +105,7 @@ class SeparationService:
             else:
                 output_files = self._separator.separate(str(source))
         except Exception as exc:
-            raise InferenceError("vocal/instrumental separation failed.", str(exc)) from exc
+            raise InferenceError("separacja wokalu i podkładu nie powiodła się.", str(exc)) from exc
 
         paths = []
         for raw in output_files or []:
@@ -126,5 +126,7 @@ class SeparationService:
             None,
         )
         if not vocals or not instrumental or not vocals.exists() or not instrumental.exists():
-            raise InferenceError("separator did not produce both vocals and instrumental stems.")
+            raise InferenceError(
+                "separator nie utworzył obu plików: wokalu i podkładu instrumentalnego."
+            )
         return SeparatedStems(vocals=vocals, instrumental=instrumental)
