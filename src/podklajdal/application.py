@@ -36,6 +36,7 @@ StageCallback = Callable[[JobState, str | None], None]
 NoticeCallback = Callable[[str], None]
 DebugCallback = Callable[[str], None]
 DownloadCallback = Callable[[dict], None]
+SeparationCallback = Callable[[int], None]
 
 
 def validate_duration_policy(duration_seconds: int, allow_long: bool) -> bool:
@@ -76,6 +77,7 @@ class PodklajdalApplication:
         on_notice: NoticeCallback | None = None,
         on_debug: DebugCallback | None = None,
         on_download: DownloadCallback | None = None,
+        on_separation_progress: SeparationCallback | None = None,
     ) -> JobResult:
         started = time.monotonic()
         paths = None
@@ -133,11 +135,15 @@ class PodklajdalApplication:
             self.audio.prepare(source, paths.prepared_audio)
             prepared_info = self.audio.probe(paths.prepared_audio)
 
-            stage(JobState.MODEL_READY, "Preparing separation model")
+            stage(JobState.MODEL_READY)
             self.separator.ensure_model(paths.stems_dir)
 
             stage(JobState.SEPARATING)
-            stems = self.separator.separate(paths.prepared_audio, paths.stems_dir)
+            stems = self.separator.separate(
+                paths.prepared_audio,
+                paths.stems_dir,
+                on_progress=on_separation_progress,
+            )
             self.audio.validate_duration(
                 stems.vocals, prepared_info.duration_seconds, tolerance=1.0
             )
